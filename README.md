@@ -1,5 +1,28 @@
 # TOGA for norns — shim + demo
 
+This repo provides a small **Norns mod (TOGA-SHIM)** that lets you use the excellent [Toga TouchOSC scripts](https://github.com/wangpy/toga) system-wide, without needing to manually patch each Lua script.
+
+### Credits
+
+- **[Toga](https://github.com/wangpy/toga)** by [wangpy] — the original TouchOSC templates and Lua shims for Grid/Arc emulation.  
+- This repo just adds a lightweight **system-wide wrapper** (the “shim” mod) so any Norns script that uses Grid or Arc can be driven from TouchOSC without editing each script manually.
+
+### What this mod does
+
+- Hooks into Norns’ `script_pre_init` so that Grid/Arc calls can be redirected to Toga automatically.
+- Provides a small **SYSTEM > MODS > TOGA-SHIM** menu to toggle *Force/Auto* and reset TouchOSC destinations.
+- Lets you use TouchOSC for both Grid and Arc across all your scripts, immediately after enabling the mod.
+
+### Requirements
+
+- Install [Toga](https://github.com/wangpy/toga) into `~/dust/code/toga/`.  
+- Install this mod into `~/dust/code/toga-shim/`.  
+- Enable **TOGA-SHIM** under SYSTEM → MODS.
+
+### Thanks
+
+All credit for the **TouchOSC layouts, OSC shims, and original work** goes to [wangpy](https://github.com/wangpy).  
+This repo is just a small tweak to make that work easier to use system-wide in day-to-day Norns life.
 Drop-in **system-wide** OSC shims for **grid** and **arc** (TouchOSC/TOga), plus a musical Arc demo.  
 No per-script edits. No REPL required. Toggle via **SYSTEM → MODS → TOGA-SHIM**.
 
