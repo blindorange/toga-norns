@@ -21,7 +21,7 @@ end
 
 local function save_prefs()
   ensure_dir(DATA_DIR)
-  local ok, err = pcall(tabutil.save, PREFS_FN, { FORCE_MODE = FORCE_MODE, VERBOSE = VERBOSE })
+  local ok = pcall(tabutil.save, PREFS_FN, { FORCE_MODE = FORCE_MODE, VERBOSE = VERBOSE })
   if not ok then
     local fh = io.open(PREFS_FN, "w")
     if fh then
@@ -71,7 +71,7 @@ load_prefs()
 mod.hook.register("script_pre_init", "toga-shim preinit", function()
   if not toga_installed() then log("toga not found in dust/code/toga — idle"); return end
 
-  local force   = (FORCE_MODE == 1)
+  local force    = (FORCE_MODE == 1)
   local sub_grid = force or not have_physical('grid')
   local sub_arc  = force or not have_physical('arc')
 
@@ -106,8 +106,15 @@ end
 
 function menu.key(n,z)
   if z==0 then return end
-  if n==2 then _menu.set_mode("mods") end
-  if n==3 then
+  if n==1 then
+    -- K1: always return to MODS list
+    _menu.set_mode("mods")
+    return
+  elseif n==2 then
+    -- K2: also return to MODS (fallback/consistency with some mods)
+    _menu.set_mode("mods")
+    return
+  elseif n==3 then
     if menu.i == 1 then
       FORCE_MODE = (FORCE_MODE==1) and 0 or 1
       save_prefs()
@@ -115,8 +122,10 @@ function menu.key(n,z)
       VERBOSE = not VERBOSE
       save_prefs()
     elseif menu.i == 3 then
-      print(string.format("[toga-shim] status: Force=%s, Verbose=%s", FORCE_MODE==1 and "Always" or "Auto", tostring(VERBOSE)))
+      print(string.format("[toga-shim] status: Force=%s, Verbose=%s",
+        FORCE_MODE==1 and "Always" or "Auto", tostring(VERBOSE)))
     elseif menu.i == 4 then
+      -- clear known TouchOSC destinations (both shims)
       local okg, tg = pcall(function() return (include "toga/lib/togagrid").connect() end)
       if okg and tg then tg.dest = {}; tg:refresh(true) end
       local oka, ta = pcall(function() return (include "toga/lib/togaarc").connect() end)
