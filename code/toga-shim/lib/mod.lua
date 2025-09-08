@@ -110,7 +110,7 @@ local rows = {
   { name="Verbose", value=function() return VERBOSE and "On" or "Off" end, action=function()
       VERBOSE = not VERBOSE; save_prefs()
     end },
-  { name="Status",  value=function() return "Show in console" end, action=function()
+  { name="Status",  value=function() return "Print to console" end, action=function()
       print(string.format("[toga-shim] Force=%s  Verbose=%s", force_label(), tostring(VERBOSE)))
       print("[toga-shim] "..status_line())
     end },
@@ -123,37 +123,40 @@ local rows = {
     end },
 }
 
+-- Required by norns menu system; ensures page switching works
+function menu.init()  menu.i = 1 end
+function menu.deinit() end
+
 function menu.redraw()
   screen.clear()
+  -- title
   screen.level(15); screen.move(64, 10); screen.text_center("TOGA-SHIM")
-  -- draw selectable rows with highlight bar
+
+  -- rows (with underline highlight + right-aligned values)
   local y0 = 24
   for idx, row in ipairs(rows) do
     local y = y0 + (idx-1)*12
     if idx == menu.i then
-      -- highlight strip
-      screen.level(3); screen.rect(6, y-9, 116, 11); screen.fill()
+      screen.level(4); screen.move(8, y+2); screen.line(120, y+2); screen.stroke()
       screen.level(15)
     else
       screen.level(8)
     end
-    screen.move(10, y); screen.text(row.name)
+    screen.move(12, y); screen.text(row.name)
     local val = row.value and row.value() or ""
-    screen.move(122, y); screen.text_right(val)
+    screen.move(118, y); screen.text_right(val)
   end
-  -- status line
-  screen.level(5); screen.move(64, 62); screen.text_center(status_line())
+
+  -- status
+  screen.level(6); screen.move(64, 62); screen.text_center(status_line())
   screen.update()
 end
 
 function menu.key(n,z)
   if z==0 then return end
-  if n==1 then
-    -- K1: back to MODS
-    _menu.set_mode("mods"); return
-  elseif n==2 then
-    -- K2: also back (fallback)
-    _menu.set_mode("mods"); return
+  if n==1 or n==2 then
+    -- K1/K2: back to MODS
+    _menu.set_page("mods"); return
   elseif n==3 then
     -- K3: activate selected action
     local row = rows[menu.i]
