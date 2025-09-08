@@ -1,5 +1,5 @@
 -- TOGA-SHIM mod: system-wide Toga Grid/Arc with a simple settings menu
--- Places a menu at SYSTEM > MODS > TOGA-SHIM and swaps grid/arc at script_pre_init.
+-- Appears at SYSTEM > MODS > TOGA-SHIM and swaps grid/arc at script_pre_init.
 
 local mod     = require 'core/mods'
 local util    = require 'util'
@@ -91,54 +91,80 @@ mod.hook.register("script_pre_init", "toga-shim preinit", function()
 end)
 
 -- ── menu (SYSTEM > MODS > TOGA-SHIM) ────────────────────────────────────────
-local menu = { i = 1, items = { "Force", "Verbose", "Status", "Reset Destinations" } }
+local menu = { i = 1 }
+
+local function force_label()
+  return (FORCE_MODE==1) and "Always" or "Auto"
+end
+
+local function status_line()
+  local g = have_physical('grid') and "phys" or "none"
+  local a = have_physical('arc')  and "phys" or "none"
+  return "Phys  grid:"..g.."  arc:"..a
+end
+
+local rows = {
+  { name="Force",   value=function() return force_label() end, action=function()
+      FORCE_MODE = (FORCE_MODE==1) and 0 or 1; save_prefs()
+    end },
+  { name="Verbose", value=function() return VERBOSE and "On" or "Off" end, action=function()
+      VERBOSE = not VERBOSE; save_prefs()
+    end },
+  { name="Status",  value=function() return "Show in console" end, action=function()
+      print(string.format("[toga-shim] Force=%s  Verbose=%s", force_label(), tostring(VERBOSE)))
+      print("[toga-shim] "..status_line())
+    end },
+  { name="Reset Destinations", value=function() return "Clear Grid/Arc OSC" end, action=function()
+      local okg, tg = pcall(function() return (include "toga/lib/togagrid").connect() end)
+      if okg and tg then tg.dest = {}; tg:refresh(true) end
+      local oka, ta = pcall(function() return (include "toga/lib/togaarc").connect() end)
+      if oka and ta then ta.dest = {}; ta:refresh(true) end
+      print("[toga-shim] cleared destinations")
+    end },
+}
 
 function menu.redraw()
   screen.clear()
-  screen.level(15); screen.move(64, 12); screen.text_center("TOGA-SHIM")
-  screen.level(8);  screen.move(64, 28); screen.text_center("Force: "..(FORCE_MODE==1 and "Always" or "Auto"))
-  screen.move(64, 40); screen.text_center("Verbose: "..(VERBOSE and "On" or "Off"))
-  local g = have_physical('grid') and "phys" or "none"
-  local a = have_physical('arc')  and "phys" or "none"
-  screen.move(64, 52); screen.text_center("Phys  grid:"..g.."  arc:"..a)
+  screen.level(15); screen.move(64, 10); screen.text_center("TOGA-SHIM")
+  -- draw selectable rows with highlight bar
+  local y0 = 24
+  for idx, row in ipairs(rows) do
+    local y = y0 + (idx-1)*12
+    if idx == menu.i then
+      -- highlight strip
+      screen.level(3); screen.rect(6, y-9, 116, 11); screen.fill()
+      screen.level(15)
+    else
+      screen.level(8)
+    end
+    screen.move(10, y); screen.text(row.name)
+    local val = row.value and row.value() or ""
+    screen.move(122, y); screen.text_right(val)
+  end
+  -- status line
+  screen.level(5); screen.move(64, 62); screen.text_center(status_line())
   screen.update()
 end
 
 function menu.key(n,z)
   if z==0 then return end
   if n==1 then
-    -- K1: always return to MODS list
-    _menu.set_mode("mods")
-    return
+    -- K1: back to MODS
+    _menu.set_mode("mods"); return
   elseif n==2 then
-    -- K2: also return to MODS (fallback/consistency with some mods)
-    _menu.set_mode("mods")
-    return
+    -- K2: also back (fallback)
+    _menu.set_mode("mods"); return
   elseif n==3 then
-    if menu.i == 1 then
-      FORCE_MODE = (FORCE_MODE==1) and 0 or 1
-      save_prefs()
-    elseif menu.i == 2 then
-      VERBOSE = not VERBOSE
-      save_prefs()
-    elseif menu.i == 3 then
-      print(string.format("[toga-shim] status: Force=%s, Verbose=%s",
-        FORCE_MODE==1 and "Always" or "Auto", tostring(VERBOSE)))
-    elseif menu.i == 4 then
-      -- clear known TouchOSC destinations (both shims)
-      local okg, tg = pcall(function() return (include "toga/lib/togagrid").connect() end)
-      if okg and tg then tg.dest = {}; tg:refresh(true) end
-      local oka, ta = pcall(function() return (include "toga/lib/togaarc").connect() end)
-      if oka and ta then ta.dest = {}; ta:refresh(true) end
-      print("[toga-shim] cleared destinations")
-    end
+    -- K3: activate selected action
+    local row = rows[menu.i]
+    if row and row.action then row.action() end
     menu.redraw()
   end
 end
 
 function menu.enc(n,d)
   if n==2 then
-    menu.i = util.clamp(menu.i + (d>0 and 1 or -1), 1, #menu.items)
+    menu.i = util.clamp(menu.i + (d>0 and 1 or -1), 1, #rows)
     menu.redraw()
   end
 end
