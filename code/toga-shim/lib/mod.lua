@@ -151,14 +151,30 @@ function menu.deinit() end
 function menu.redraw()
   screen.clear()
   screen.level(15); screen.move(64, 10); screen.text_center("TOGA-SHIM")
-  local y0, row_h = 22, 12
-  for idx, row in ipairs(rows) do
-    local y = y0 + (idx-1)*row_h
-    if idx == menu.i then screen.level(4); screen.move(10, y+3); screen.line(118, y+3); screen.stroke(); screen.level(15) else screen.level(8) end
+
+  -- show up to 5 rows with scrolling
+  local visible = 5
+  local top = util.clamp(menu.i - 2, 1, math.max(1, #rows - (visible - 1)))
+  local y0, row_h = 16, 10
+
+  for line = 0, visible - 1 do
+    local idx = top + line
+    if idx > #rows then break end
+    local row = rows[idx]
+    local y = y0 + line * row_h
+
+    if idx == menu.i then
+      screen.level(4); screen.move(10, y+3); screen.line(118, y+3); screen.stroke()
+      screen.level(15)
+    else
+      screen.level(8)
+    end
+
     screen.move(12, y); screen.text(row.name)
     local val = row.value and row.value() or ""
     screen.move(118, y); screen.text_right(val)
   end
+
   screen.update()
 end
 
