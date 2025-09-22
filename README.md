@@ -18,6 +18,7 @@ Instead of editing every script (`local grid = …` / `local arc = …`), TOGA-S
   - Safe OSC handler capture/restore.
   - Grid → Arc destination mirroring (Arc auto-connects when Grid connects).
 - Includes **arc-hello**, a lightweight Arc demo script (LED arcs + simple sound).
+- I have a copy of Toga here too, I think I may have modified it to make this work, I recommend trying the original first, if you have no success, then try the one hosted here.
 
 ---
 
